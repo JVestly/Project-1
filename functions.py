@@ -14,7 +14,7 @@ def polynomial_features(x, p, intercept=False):
     return X
 
 def runge(x):
-    return 1/(1+25*(x**2)) + np.random.normal(0, 0.001, n)
+    return 1/(1+25*(x**2)) + np.random.normal(0, 0.01, n)
 
 def ols(X, y):
     """Define the ordinary least squares. Returns the optimal parameters, beta"""

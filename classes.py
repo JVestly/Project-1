@@ -44,10 +44,10 @@ class Resampling():
     def __init__(self, x):
         self._x = x
 
-    def bootstrap():
+    def bootstrap(data, bootstraps):
         """Define the bootstrap method"""
         return None
     
-    def kCross():
+    def kCross(data, k):
         """Define the k-cross validation method"""
         return None

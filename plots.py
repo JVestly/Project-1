@@ -8,7 +8,9 @@ def plot2d(outer, inner, train=False, pd=False):
     empty_lists = makeEmptyLists(train)
     # plot_lists = makeLists(outer, inner, empty_lists, train)
     for i in outer:
-        for j in inner: return None
+        for j in inner:
+            if pd:
+                polynomialDegree_plot()
 
 
 def heatMap(x, y, z):
@@ -30,3 +32,6 @@ def makeEmptyLists(train=None):
 #     """Define a helper function which iterates and makes plot lists"""
 
 #def scaling(pd):    
+
+def polynomialDegree_plot(lists, outer, inner, train=False):
+    scaling()

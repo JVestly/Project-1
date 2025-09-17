@@ -37,6 +37,7 @@ class GradientDescent():
     
     def gradRMS():
         """Define the RMSprop method"""
+        return None
 
 
 class Resampling():

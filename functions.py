@@ -28,7 +28,7 @@ def mse(true, pred, matrix=False):
         # Sum over all pairs of (true, pred)
         for i in range(true.shape[0]):
             for j in range(true.shape[1]):
-                mse += (T[i][j] -pred[i][j])**2
+                mse += (true[i][j] -pred[i][j])**2
             mse = mse/true.shape[1] # Divide total mse by number of data points, j
         return MSE
     

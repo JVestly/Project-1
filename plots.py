@@ -1,12 +1,14 @@
 from imports import *
 
-def plot2d(outer, inner, train=False):
-    """This function takes in arrays x and y and z, being a single- or a list of arrays, 
-    if there are more data to plot in a single plot"""
+def plot2d(outer, inner, train=False, pd=False):
+    """This function takes: outer and inner, specifying the number of loop iterations (intrval ofplotting axes).
+    Train: by default False. True if we want to add performance metric for training set in the plot.
+    pd (polynomial degrees): if we're plotting polynomial degree. If True, we call a function for doing so"""
     
-    lists = makeLists(train)
-    for i in range(outer):
-        for j in range(inner):
+    empty_lists = makeEmptyLists(train)
+    # plot_lists = makeLists(outer, inner, empty_lists, train)
+    for i in outer:
+        for j in inner: return None
 
 
 def heatMap(x, y, z):
@@ -15,10 +17,16 @@ def heatMap(x, y, z):
 
 
 ## Auxiliary plot functions
-def makeLists(train=None):
+
+def makeEmptyLists(train=None):
     x, y = list()
     if train:
         x_train = list()
         y_train = list()
         return x, y, x_train, y_train
     return x, y
+
+# def makeLists(outer, inner, empty, train=False)
+#     """Define a helper function which iterates and makes plot lists"""
+
+#def scaling(pd):    

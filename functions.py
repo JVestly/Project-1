@@ -20,18 +20,34 @@ def ols(X, y):
     """Define the ordinary least squares. Returns the optimal parameters, beta"""
     return (pinv(X.T@X))@X.T@y
 
-def mse(true, pred):
-
-    return None
+def mse(true, pred, matrix=False):
+    """Generic for arrays and matrices"""
+    if matrix:
+        assert(true.shape == pred.shape), "Input vectors must be of equal length"
+        MSE = 0
+        # Sum over all pairs of (true, pred)
+        for i in range(true.shape[0]):
+            for j in range(true.shape[1]):
+                mse += (T[i][j] -pred[i][j])**2
+            mse = mse/true.shape[1] # Divide total mse by number of data points, j
+        return MSE
+    
+    assert(len(true)==len(pred))
+    n = len(true)
+    mse = 0
+    for i in range(n):
+        diff_squared = (true[i]-pred[i])**2
+        mse += diff_squared
+    return mse
 
 def r_squared():
+    """Docstring r2"""
     return None
 
 
 def gradient(X, y, theta, lam=0):
     """Generic gradient method"""
     return (2.0/n) * (X.T @ (X @ theta - y)) + 2.0 * lam * theta
-
 
 
     # Initialize lists for mse, r squared and parameters. Use 

@@ -1,12 +1,19 @@
 from imports import *
 
 class GradientDescent():
-    def __init__(self, X_norm):
-        self.X = X_norm
+    """TD: Define class"""
+    def __init__(self, X_norm, iters, eta=0.1 eps=0):
+        self._X = X_norm
+        self._iters = iters
+        self._eta = eta
 
     def gradOrd():
         """Define the ordinary gradient descent. Can be used for both OLS and Ridge, since lamda is 0 by default"""
-        return None
+        theta = np.zeros(m)
+        for i in range(self._iters):
+            gradient = gradient(self.X_norm, y_centered, theta)
+            theta = theta - self._eta*gradient
+        return theta
     
     def gradLasso():
         """Define the gradient LASSO method"""
@@ -33,8 +40,9 @@ class GradientDescent():
 
 
 class Resampling():
+    """TD: Define class"""
     def __init__(self, x):
-        self.x = x
+        self._x = x
 
     def bootstrap():
         """Define the bootstrap method"""

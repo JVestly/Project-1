@@ -69,9 +69,9 @@ class GradientDescent:
         return theta
 
     
-    def gradAda(self, eta=0.1, lam=0.0, eps=1e-8):
+    def gradAda(self, eta=0.1, lam=0.0, eps=1e-8, theta0=None):
         """
-        AdaGrad for OLS/Ridge.
+        AdaGrad with r_t accumulation and H_t^{-1/2} scaling as in the slides.
         Parameters
         ----------
         eta : float, default 0.1
@@ -79,23 +79,28 @@ class GradientDescent:
         lam : float, default 0.0
             Ridge penalty strength.
         eps : float, default 1e-8
-            Numerical stabilizer.
+            Numerical stabilizer inside the square root.
+        theta0 : array-like or None, default None
+            Optional warm-start parameters.
         Returns
         -------
         ndarray of shape (m,)
             The optimized parameter vector.
         """
-        theta = np.zeros(self._m)
+        if theta0 is None:
+            theta = np.zeros(self._m)
+        else:
+            theta = np.asarray(theta0).reshape(-1).copy()
         r = np.zeros_like(theta)
         for _ in range(self._iters):
-            grad = gradient(self._X, self._y, theta, lam=lam)
-            if self.stopping(grad):
+            g = gradient(self._X, self._y, theta, lam=lam)
+            if self.stopping(g):
                 break
-            r = r + grad * grad
-            theta = theta - (eta / (np.sqrt(r) + eps)) * grad
-    
-    
+            r = r + g * g
+            theta = theta - eta * g / (np.sqrt(r + eps))
+        
         return theta
+
 
     
     def gradADAM(self, eta=0.001, beta1=0.9, beta2=0.999, lam=0.0, eps=1e-8, bias_correction=True):
@@ -141,15 +146,6 @@ class GradientDescent:
     
         return theta
 
-    
-    def gradStoc(self, batch_size=1):
-        """Define the stochastic gradient descent method"""
-        gradient = gradient(self._X_norm, self._y, self._theta)
-        M = self._m/batch_size
-        i = 0
-        while not self.stopping(gradient) and i < self._iters: 
-            i += 1
-            return None
         
     def gradStoc(self, batch_size=1, eta=0.1, lam=0.0, shuffle=True):
         """

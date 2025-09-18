@@ -60,6 +60,27 @@ def gradient(X, y, theta, lam=0):
     """Generic gradient method"""
     return (2.0/n) * (X.T @ (X @ theta - y)) + 2.0 * lam * theta
 
+def bias(T, P):
+    """Define the bias function. Assume that the inputs are vectors. Returns bias as a scalar."""
+    assert(T.shape == P.shape)
+    bias = 0
+    for col in range(T.shape[1]): # Go through every column to compute the average predicted values accross all bootstraps
+        avg_ypred = (1/P.shape[0])*sum(P[:, col])
+        for row in range(T.shape[0]): # For each bootstrap, we compare the average predicted value in every column to every true value
+            bias += (T[row][col] - avg_ypred)**2
+    bias = bias/(T.shape[1]*T.shape[0]) # Divide by all data points, i
+    return bias
+
+def var(P):
+    """Define variance function. Assume that input is a vector of predictions. Returns variance as a scalar."""
+    var = 0
+    for n in range(P.shape[1]): # Go through all bootstraps
+        avg_var = (1/P.shape[0])*sum(P[:,n])
+        for m in range(P.shape[0]):
+            var += (P[m][n] - avg_var)**2
+    var = var/(P.shape[1]*P.shape[0])    
+    return var
+
 
     # Initialize lists for mse, r squared and parameters. Use 
 def dummy():

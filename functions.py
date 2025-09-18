@@ -21,14 +21,15 @@ def ols(X, y):
     """Define the ordinary least squares. Returns the optimal parameters, beta."""
     return (pinv(X.T@X))@X.T@y
 
-def ridge(X,Y):
+def ridge(X,y, lam=0.1):
     """Define the Ridge function"""
-    return (pinv(X.T@X+inv))
+    n_features = X.shape[1]
+    return np.linalg.pinv(X.T @ X + lam * np.eye(n_features)) @ X.T @ y
 
-def mse(true, pred, scalar=False):
+def mse(true, pred, function=False):
     """Generic for arrays and matrices. Matrices by default"""
     
-    if scalar: 
+    if function: 
         n = len(true)
         mse = 0
         for i in range(n):
@@ -74,7 +75,7 @@ def bias(T, P):
 def var(P):
     """Define variance function. Assume that input is a vector of predictions. Returns variance as a scalar."""
     var = 0
-    for n in range(P.shape[1]): # Go through all bootstraps
+    for n in range(P.shape[1]):
         avg_var = (1/P.shape[0])*sum(P[:,n])
         for m in range(P.shape[0]):
             var += (P[m][n] - avg_var)**2

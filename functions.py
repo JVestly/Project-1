@@ -14,35 +14,46 @@ def polynomial_features(x, p, intercept=False):
     return X
 
 def runge(x):
-    return 1/(1+25*(x**2)) + np.random.normal(0, 0.01, n)
+    """Returns the runge function with input x"""
+    return 1/(1+25*(x**2))
 
 def ols(X, y):
-    """Define the ordinary least squares. Returns the optimal parameters, beta"""
+    """Define the ordinary least squares. Returns the optimal parameters, beta."""
     return (pinv(X.T@X))@X.T@y
 
-def mse(true, pred, matrix=False):
-    """Generic for arrays and matrices"""
-    if matrix:
-        assert(true.shape == pred.shape), "Input vectors must be of equal length"
-        MSE = 0
-        # Sum over all pairs of (true, pred)
-        for i in range(true.shape[0]):
-            for j in range(true.shape[1]):
-                mse += (true[i][j] -pred[i][j])**2
-            mse = mse/true.shape[1] # Divide total mse by number of data points, j
-        return MSE
-    
-    assert(len(true)==len(pred))
-    n = len(true)
-    mse = 0
-    for i in range(n):
-        diff_squared = (true[i]-pred[i])**2
-        mse += diff_squared
-    return mse
+def ridge(X,Y):
+    """Define the Ridge function"""
+    return (pinv(X.T@X+inv))
 
-def r_squared():
-    """Docstring r2"""
-    return None
+def mse(true, pred, scalar=False):
+    """Generic for arrays and matrices. Matrices by default"""
+    
+    if scalar: 
+        n = len(true)
+        mse = 0
+        for i in range(n):
+            diff_squared = (true[i]-pred[i])**2
+            mse += diff_squared
+        return mse
+    
+    assert(true.shape == pred.shape), "Input vectors must be of equal length"
+    MSE = 0
+
+    # Sum over all pairs of (true, pred)
+    for i in range(true.shape[0]):
+        for j in range(true.shape[1]):
+            mse += (true[i][j] -pred[i][j])**2
+            mse = mse/true.shape[1] # Divide total mse by number of data points, j
+    return MSE
+
+def r_squared(t, p):
+    """Takes in target and prediction vectors. Returns the R squared value."""
+
+    assert(len(t)==len(p)), "Input arrays must be of equal length"
+
+    R2_score = 1 - (np.sum(t - p) ** 2) / np.sum((t - np.mean(t)))
+                    
+    return R2_score
 
 
 def gradient(X, y, theta, lam=0):

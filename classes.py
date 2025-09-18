@@ -2,26 +2,39 @@ from imports import *
 
 class GradientDescent():
     """TD: Define class"""
-    def __init__(self, X_norm, iters, eta=0.1 eps=0):
+    def __init__(self, X_norm, iters, eps=1e-8):
         self._X = X_norm
         self._iters = iters
-        self._eta = eta
+        self._eps = eps
 
-    def gradOrd():
+    def gradOrd(y_centered, eta=0.1):
         """Define the ordinary gradient descent. Can be used for both OLS and Ridge, since lamda is 0 by default"""
+        m = self.norm.shape[1]
         theta = np.zeros(m)
+        preds = np.zeros(m)
         for i in range(self._iters):
-            gradient = gradient(self.X_norm, y_centered, theta)
-            theta = theta - self._eta*gradient
-        return theta
+            if i!=0:
+                if stopping(gradient): break
+            gradient = gradient(self._X_norm, y_centered, theta)
+            theta = theta - new_velocity
+            preds = self._X_norm@theta
+
+        return theta, preds
     
     def gradLasso():
         """Define the gradient LASSO method"""
         return None
 
-    def gradMomentum():
+    def gradMomentum(momentum, eta=0.1):
         """Define the gradient momentum method"""
-        return None
+        theta = np.zeros(m)
+        velocity = 0
+        for i in range(self._iters):
+            gradient = gradient(self.X_norm, y_centered, theta)
+            new_velocity = eta*gradient + momentum*velocity
+            theta = theta - new_velocity
+            velocity = new_velocity
+        return theta
 
     def gradAda():
         """Define the AdaGrad method"""
@@ -31,13 +44,17 @@ class GradientDescent():
         """Define the ADAM method"""
         return None
     
-    def gradStoc():
+    def gradStoc(batch_size=1):
         """Define the stochastic gradient descent method"""
-        return None
+        
     
     def gradRMS():
         """Define the RMSprop method"""
         return None
+    
+    def stopping(grad, e=10**(-8)):
+        """Define a helper function for gradient descent"""
+        if np.linalg.norm(grad) < e: return True
 
 
 class Resampling():

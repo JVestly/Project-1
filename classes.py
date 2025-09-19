@@ -241,6 +241,7 @@ class GradientDescent:
         """
         tol = self._eps if e is None else float(e)
         return float(np.linalg.norm(grad)) < tol
+    
 
     def scale_eta(self, x, x0, x1):
         """
@@ -261,15 +262,112 @@ class GradientDescent:
         return x0 / (x + x1)   
 
 
-class Resampling():
-    """TD: Define class"""
-    def __init__(self, x):
-        self._x = x
+class Resampling:
+    """
+    Implements resampling methods such as bootstrap and k-fold cross-validation.
+    """
 
-    def bootstrap(self, data, bootstraps):
-        """Define the bootstrap method"""
-        return None
+    def __init__(self, X, y):
+        """
+        Initialize the resampling class with data.
+
+        Parameters
+        ----------
+        X : ndarray, shape (n_samples, n_features)
+            Design matrix of input features.
+        y : ndarray, shape (n_samples,)
+            Target values.
+        """
+        self.X = np.asarray(X)
+        self.y = np.asarray(y)
+        self.n_samples = self.X.shape[0]
+        if seed is not None:
+            np.random.seed(seed)
+
+
+    def bootstrap(self, n_bootstraps=100):
+        """
+        Generate bootstrap resamples of the dataset.
+
+        Parameters
+        ----------
+        n_bootstraps : int, default=100
+            Number of bootstrap resamples to generate.
+
+        Returns
+        -------
+        list of tuples
+            Each element is a tuple (X_resampled, y_resampled, X_oob, y_oob),
+            where:
+            - X_resampled, y_resampled are the bootstrap samples
+            - X_oob, y_oob are the corresponding out-of-bag samples
+        """
+        resamples = []
+
+        for _ in range(n_bootstraps):
+            indices = np.random.randint(0, self.n_samples, self.n_samples)
+
+            oob_indices = []
+            for i in range(self.n_samples):
+                if i not in indices:
+                    oob_indices.append(i)
+
+            X_resampled = self.X[indices]
+            y_resampled = self.y[indices]
+            X_oob = self.X[oob_indices]
+            y_oob = self.y[oob_indices]
+
+            resamples.append((X_resampled, y_resampled, X_oob, y_oob))
+
+        return resamples
     
-    def kCross(self, data, k):
-        """Define the k-cross validation method"""
-        return None
+
+    def kCross(self, k=5, shuffle=True):
+        """
+        Perform k-fold cross-validation splitting.
+
+        Parameters
+        ----------
+        k : int, default=5
+            Number of folds.
+        shuffle : bool, default=True
+            If True, shuffle the dataset before splitting.
+
+        Returns
+        -------
+        list of tuples
+            Each element is a tuple (X_train, y_train, X_val, y_val),
+            where one fold is used for validation and the rest for training.
+        """
+        indices = list(range(self.n_samples))
+        if shuffle:
+            np.random.shuffle(indices)
+
+        fold_size = self.n_samples // k
+        folds = []
+
+        for i in range(k):
+            start = i * fold_size
+            if i == k - 1:  # last fold takes the remainder
+                end = self.n_samples
+            else:
+                end = (i + 1) * fold_size
+            folds.append(indices[start:end])
+
+        splits = []
+        for i in range(k):
+            val_idx = folds[i]
+
+            train_idx = []
+            for j in range(k):
+                if j != i:
+                    train_idx.extend(folds[j])
+
+            X_train = self.X[train_idx]
+            y_train = self.y[train_idx]
+            X_val = self.X[val_idx]
+            y_val = self.y[val_idx]
+
+            splits.append((X_train, y_train, X_val, y_val))
+
+        return splits

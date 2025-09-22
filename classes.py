@@ -1,13 +1,17 @@
 from imports import *
 
 class GradientDescent:
-    """TD: Define class"""
-    def __init__(self, X_norm, y, iters, eps=1e-8):
+    """
+    Gradient descent class
+    
+    """
+    def __init__(self, X_norm, y_centered, iters, eps=1e-8, l1=False):
         self._X = X_norm
         self._iters = iters
         self._eps = eps
-        self._y = y
+        self._y = y_centered
         self._m = X_norm.shape[1]
+        self._l1 = l1
 
     
     def gradOrd(self, eta=0.1, lam=0.0):
@@ -30,16 +34,34 @@ class GradientDescent:
         theta = np.zeros(self._m)
         for t in range(self._iters):
             grad = gradient(self._X, self._y, theta, lam=lam)
+            if self._l1:
+                theta = self.pgdUpdate()
             if self.stopping(grad):
                 break
-            theta = theta - eta * grad
+            else:
+                theta = theta - eta * grad
 
         return theta
 
     
-    def gradLasso():
-        """Define the gradient LASSO method"""
-        return None
+    def pgdUpdate(self, beta, grad, eta, lam=0.1):
+        """
+        Proximal gradient descent used for LASSO regression.
+        
+        Parameters
+        ----------
+        lam: float, default 0.1.
+            Lasso penalty.
+
+        Returns
+        -------
+        ndarray of shape (m, )
+            The optimized parameter vector
+        """
+        z = beta - eta*grad
+        alpha = eta*lam
+
+        return soft_threshold(z, alpha)
     
     def gradMomentum(self, momentum, eta=0.1, lam=0.0):
         """
@@ -281,8 +303,6 @@ class Resampling:
         self.X = np.asarray(X)
         self.y = np.asarray(y)
         self.n_samples = self.X.shape[0]
-        if seed is not None:
-            np.random.seed(seed)
 
 
     def bootstrap(self, n_bootstraps=100):

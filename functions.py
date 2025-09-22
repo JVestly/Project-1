@@ -91,10 +91,31 @@ def ridge(X, y, lam=0.1):
         Estimated regression coefficients (beta).
     """
     n_features = X.shape[1]
+
     return np.linalg.pinv(X.T @ X + lam * np.eye(n_features)) @ X.T @ y
 
+def soft_threshold(z, alpha, lam=0.1):
+    """
+    Used element-wise in gradient descent for Lasso regression.
+    Shrinks large values, and sets small values to zero.
 
+    Parameters
+    ----------
+    z : ndarray
+        Predicted betas.
+    lam : float, default=0.1
+        Regularization strength (lambda).
 
+    Returns
+    -------
+    float 
+        Estimated regression coefficient (beta).
+        Returns 0 if the absoulte value of y is less than or equal to alpha
+    """
+        
+    return np.sign(z) * np.maximum(np.abs(z) - alpha, 0.0)
+
+    
 def mse(y_true, y_pred):
     """
     Compute mean squared error (MSE) as a scalar.

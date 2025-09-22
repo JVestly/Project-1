@@ -13,5 +13,5 @@ if __name__ == "__main__":
     X_std[X_std == 0] = 1  # safeguard to avoid division by zero for constant features
     X_norm = (X - X_mean) / X_std
     best_pred = X@ols_params
-    mse = mse(y, best_pred, True)
+    mse_ = mse(y, best_pred, True)
     print(mse)

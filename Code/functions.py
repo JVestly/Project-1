@@ -1,5 +1,6 @@
 from imports import *
 
+
 def polynomial_features(x, p, intercept=False):
     """
     Generate a polynomial feature matrix from input data.

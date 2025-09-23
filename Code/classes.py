@@ -1,4 +1,5 @@
 from imports import *
+from functions import *
 
 class GradientDescent:
     """
@@ -194,7 +195,6 @@ class GradientDescent:
             if bias_correction:
                 m_hat = m / (1.0 - beta1 ** t)
                 v_hat = v / (1.0 - beta2 ** t)
-
             else:
                 m_hat = m
                 v_hat = v

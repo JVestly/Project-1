@@ -1,11 +1,18 @@
 """Main file"""
 from imports import *
+from plots import *
+from classes import *
+from functions import *
 
 if __name__ == "__main__":
     n = 1000
     x = np.linspace(-1, 1, n)
     y = runge(x) + np.random.normal(0, 0.1, n)
-    plota(15, x, y, "mse")
+    x1 = np.arange(1,6)
+    x2 = np.arange(-1,-6, -1)
+    heatMap(x1, x2, True)
+    #plotPD(15, x, y, "a", "mse")
+    #plotPD(15, x, y, "b", "mse")
     # X = polynomial_features(x,20)
     # print("Main file")
     # X_mean = X.mean(axis=0)

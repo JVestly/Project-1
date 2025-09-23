@@ -1,0 +1,4 @@
+All imports needed are in the import.py file. 
+numpy >= 2.2
+sklearn >= 1.7.1
+... ? ...

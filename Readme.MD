@@ -2,7 +2,7 @@ Project 1 in FYS-STK4155
 
 Project authors: Amund Solum Alsvik og Jørgen Vestly
 
-In this project, we're investegating different methods of performing regression.
+In this project, we're investigating different methods of performing regression.
 We will mainly compare results for using different methods such as OLS, Lasso, and Ridge, using both analytical and numerical methods.
 Moreover, we will discuss the important role of bias-variance tradeoff for our models.
 

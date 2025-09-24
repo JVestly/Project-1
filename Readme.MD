@@ -12,4 +12,6 @@ classes.py - defines the gradient descent and resampling classes.
 plots.py - defines the different plotting methods used for presenting results.
 imports.py - contains all needed imports for the project.
 main.py - main file, from where all the code is ran.
+
+In order for the code to work, there is a list of required installations in the main folder "Project-1"
 requirements.txt - a list of mandatory installations to run the code

@@ -1,5 +1,9 @@
-from imports import *
-from functions import *
+# from imports import *
+# from functions import soft_threshold, mse
+# from plots import plotPD, heatMap
+
+import numpy as np
+from functions import soft_threshold, mse, gradient
 
 class GradientDescent:
     """
@@ -33,7 +37,7 @@ class GradientDescent:
         ndarray of shape (m,)
             The optimized parameter vector.
         """
-        theta = np.empty(self._m)
+        theta = np.zeros(self._m)
         thetas = []
 
         msError = []
@@ -50,6 +54,7 @@ class GradientDescent:
                 alpha = eta*lam
                 z = theta - eta*grad
                 theta = soft_threshold(z, alpha)
+                thetas.append(theta)
                 pred = self._X@theta
                 msError.append(mse(self._y, pred))
             else:

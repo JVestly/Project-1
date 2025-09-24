@@ -1,6 +1,12 @@
-from imports import *
-from functions import *
-
+# from imports import *
+# from functions import polynomial_features, scale, ols, ridge, mse, r_squared
+# from classes import GradientDescent
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from functions import polynomial_features, scale, ols, ridge, mse, r_squared
+from sklearn.model_selection import train_test_split
+from classes import GradientDescent
 
 def plotPD(deg, x, y, t, type_=" "):
     """
@@ -68,7 +74,7 @@ def plotPD(deg, x, y, t, type_=" "):
     plt.show()
 
 
-def heatMap(x, y, pd=False):
+def heatMap(outer, inner, x, y, pd=False):
     """
     Heat map as a function of two variables.
     
@@ -78,14 +84,29 @@ def heatMap(x, y, pd=False):
     """
     plot_matrix = np.empty((len(x), len(y)))
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
-    for i, deg in enumerate(x):
-        X = polynomial_features(x_train, i)
-        Y = polynomial_features(x_test, i)
-        scaled_train = (scale(X, y))[0]
-        scaled_test = (scale(Y, y))[0]
-        for e, lam in enumerate(y):
-            beta = ols(scaled_train, y_train)
-            pred = scaled_test@beta + np.mean(y_train)
+    n = 3
+    X = polynomial_features(x_train, n)
+    Y = polynomial_features(x_test, n)
+    scaled_train, y_scaled = scale(X, y)
+    scaled_test = (scale(Y, y))[0]
+    y_mean = np.mean(y)
+    y_centered = y - y_mean
+    for i, deg in enumerate(outer):
+        if pd: 
+            X = polynomial_features(x_train, i)
+            Y = polynomial_features(x_test, i)
+            scaled_train, y_scaled = scale(X, y)
+            scaled_test = (scale(Y, y))[0]
+            y_mean = np.mean(y)
+            y_centered = y - y_mean
+        for e, lam in enumerate(inner):
+            if pd:
+                beta = ols(scaled_train, y_train)
+                pred = scaled_test@beta + np.mean(y_train)
+            elif not pd:
+                grad = GradientDescent(scaled_train, y_train, deg, lam, l1=True)
+                betas = (grad.gradOrd(lam=lam))[0]
+                pred = scaled_test@betas
             pointMse = mse(y_test, pred)
             plot_matrix[i,e] = pointMse
 
@@ -95,11 +116,11 @@ def heatMap(x, y, pd=False):
                  cmap = 'coolwarm', linecolor = 'black',
                  linewidths = 2, robust = True)
     
-    ax.set_title('Heatmap by Pythoneo.com')
+    ax.set_title('Heatmap')
     ax.set_xlabel('My X label')
     ax.set_ylabel('My Y label')
     #f.savefig('My heatmap.png')
-   # plt.show()
+    plt.show()
 
 
 
@@ -117,6 +138,3 @@ def makeEmptyLists(train=None):
 #     """Define a helper function which iterates and makes plot lists"""
 
 #def scaling(pd):    
-
-def polynomialDegree_plot(lists, outer, inner, train=False):
-    scaling()

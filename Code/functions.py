@@ -1,4 +1,8 @@
-from imports import *
+# from imports import *
+#from plots import *
+# REMOVE: from imports import *
+import numpy as np
+from numpy.linalg import pinv
 
 
 def polynomial_features(x, p, intercept=False):
@@ -246,9 +250,9 @@ def gradient(X, y, beta, lam=0.0):
     """
     n = X.shape[0]
     if lam != 0.0:
-        return (2 / n) * X.T @ (y - X @ beta) + 2 * lam * beta
+        return (2 / n) * X.T @ ((X @ beta) - y) + 2 * lam * beta
 
-    return (2 / n) * X.T @ (y - X @ beta)
+    return (2 / n) * X.T @ ((X @ beta) - y)
 
 def bias(y_true, y_pred):
     """

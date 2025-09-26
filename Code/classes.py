@@ -19,7 +19,7 @@ class GradientDescent:
         self._l1 = l1
 
     
-    def gradOrd(self, eta=0.001, lam=0.1, pred=False):
+    def gradOrd(self, eta=0.001, l=0.1):
         """
         Ordinary gradient descent. Can be used for both 
         OLS and Ridge, since lam=0 by default.
@@ -29,7 +29,7 @@ class GradientDescent:
         ----------
         eta : float, default 0.1
             Learning rate.
-        lam : float, default 0.0
+        l : float, default 0.0
             Ridge and LASSO penalty strength.
             
         Returns
@@ -43,15 +43,13 @@ class GradientDescent:
         msError = []
 
         for t in range(self._iters):
-            grad = gradient(self._X, self._y, theta, lam)
+            grad = gradient(self._X, self._y, theta, lam=l)
 
-            if self.stopping(grad):
-                break
-            
+
             z = theta - eta * grad
             
             if self._l1:
-                alpha = eta*lam
+                alpha = eta*l
                 z = theta - eta*grad
                 theta = soft_threshold(z, alpha)
                 thetas.append(theta)
@@ -62,6 +60,8 @@ class GradientDescent:
                 thetas.append(theta)
                 pred = self._X@theta
                 msError.append(mse(self._y, pred))
+            if self.stopping(grad):
+                break
 
         best_pred = min(msError)
         idx = msError.index(best_pred)
@@ -106,20 +106,29 @@ class GradientDescent:
             The optimized parameter vector.
         """
         theta = np.zeros(self._m)
+        thetas = []
+
+        msError = []
         velocity = 0
         for _ in range(self._iters):
             grad = gradient(self._X, self._y, theta, lam)
-            if self.stopping(grad):
-                break
             new_velocity = eta*grad + momentum*velocity
-            z = theta - eta * new_velocity
-            if self.l1:
+            z = theta - eta * velocity
+            if self._l1:
                 alpha = eta*lam
                 theta = soft_threshold(z, alpha)
             else: 
                 theta = z
+            thetas.append(theta)
+            pred = self._X@theta
+            msError.append(mse(self._y, pred))
+            if self.stopping(grad):
+                break
   
-        return theta
+        best_pred = min(msError)
+        idx = msError.index(best_pred)
+        theta = thetas[idx]
+        return theta, best_pred
 
     
     def gradAda(self, eta=0.1, lam=0.0, eps=1e-8, theta0=None):

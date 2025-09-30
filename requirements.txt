@@ -1,6 +1,6 @@
 All imports needed are in the import.py file. 
-numpy
-sklearn
-matplotlib
-pandas
-seaborn
+numpy==2.3.2
+sklearn==1.7.1
+matplotlib==3.10.6
+pandas==2.3.2
+seaborn==0.13.2

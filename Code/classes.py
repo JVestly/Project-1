@@ -1,16 +1,14 @@
-# from imports import *
-# from functions import soft_threshold, mse
-# from plots import plotPD, heatMap
-
 import numpy as np
-from functions import soft_threshold, mse, gradient
+from functions import soft_threshold, mse, gradient, bias, var, polynomial_features, runge, scale, ols
+from sklearn.model_selection import train_test_split
+from sklearn.utils import resample
 
 class GradientDescent:
     """
-    Gradient descent class
-    
+    Gradient descent class.
+    Methods performind different types of Gradient descent. 
     """
-    def __init__(self, X_norm, y_centered, iters, eps=1e-8, l1=False):
+    def __init__(self, X_norm, iters, y_centered, eps=1e-6, l1=False):
         self._X = X_norm
         self._iters = iters
         self._eps = eps
@@ -18,8 +16,29 @@ class GradientDescent:
         self._m = X_norm.shape[1]
         self._l1 = l1
 
+
+    def Grad(self, X, y, iterations, eta):
+        """
+        Gradient decent method that does both OLS and Ridge based on the choice of lamb and mass in the constructor.
+
+        See the documentation for the whole class for a usage guide. 
+        """
+        theta = np.zeros(X.shape[1])
+        change = np.zeros_like(theta)
+
+        for _ in range(iterations):
+            penalty_R = 0 * theta
+            momentum = 0 * change
+            grad = 2 * ((1 / y.shape[0]) * X.T @ (X @ theta - y) + penalty_R)
+            change = (-1 * eta * grad) + momentum
+            theta += change
+            if (np.linalg.norm(grad) < self._eps):
+                break
+
+        return theta
+
     
-    def gradOrd(self, eta=0.001, l=0.1):
+    def gradOrd(self, iters=None, eta=0.1, l=0):
         """
         Ordinary gradient descent. Can be used for both 
         OLS and Ridge, since lam=0 by default.
@@ -37,14 +56,12 @@ class GradientDescent:
         ndarray of shape (m,)
             The optimized parameter vector.
         """
-        theta = np.zeros(self._m)
+        theta = np.zeros(self._X.shape[1])
         thetas = []
 
-        msError = []
 
         for t in range(self._iters):
             grad = gradient(self._X, self._y, theta, lam=l)
-
 
             z = theta - eta * grad
             
@@ -53,20 +70,13 @@ class GradientDescent:
                 z = theta - eta*grad
                 theta = soft_threshold(z, alpha)
                 thetas.append(theta)
-                pred = self._X@theta
-                msError.append(mse(self._y, pred))
-            else:
-                theta = z
-                thetas.append(theta)
-                pred = self._X@theta
-                msError.append(mse(self._y, pred))
-            if self.stopping(grad):
+                
+            theta = z
+            
+            if t!= 0  and  self.stopping(grad):
                 break
-
-        best_pred = min(msError)
-        idx = msError.index(best_pred)
-        theta = thetas[idx]
-        return theta, best_pred
+        
+        return theta
 
     
     def pgdUpdate(self, beta, grad, eta, lam=0.1):
@@ -112,8 +122,8 @@ class GradientDescent:
         velocity = 0
         for _ in range(self._iters):
             grad = gradient(self._X, self._y, theta, lam)
-            new_velocity = eta*grad + momentum*velocity
-            z = theta - eta * velocity
+            velocity = eta*grad + momentum*velocity
+            z = theta - velocity
             if self._l1:
                 alpha = eta*lam
                 theta = soft_threshold(z, alpha)
@@ -125,10 +135,7 @@ class GradientDescent:
             if self.stopping(grad):
                 break
   
-        best_pred = min(msError)
-        idx = msError.index(best_pred)
-        theta = thetas[idx]
-        return theta, best_pred
+        return theta
 
     
     def gradAda(self, eta=0.1, lam=0.0, eps=1e-8, theta0=None):
@@ -171,7 +178,7 @@ class GradientDescent:
 
 
     
-    def gradADAM(self, eta=0.001, beta1=0.9, beta2=0.999, lam=0.0, eps=1e-8, bias_correction=True):
+    def gradADAM(self, eta=0.1, beta1=0.9, beta2=0.999, lam=0.0, eps=1e-8):
         """
         Adam optimizer for OLS/Ridge.
         Parameters
@@ -185,9 +192,7 @@ class GradientDescent:
         lam : float, default 0.0
             Ridge penalty strength.
         eps : float, default 1e-8
-            Numerical stabilizer.
-        bias_correction : bool, default True
-            Whether to use bias-corrected moments.
+            Numerical stabilizer
         Returns
         -------
         ndarray of shape (m,)
@@ -197,29 +202,21 @@ class GradientDescent:
         m = np.zeros_like(theta)
         v = np.zeros_like(theta)
         t = 0
-        for _ in range(self._iters):
+        first_moment = 0.0
+        second_moment = 0.0
+        for iter in range(1, self._iters+1):
             grad = gradient(self._X, self._y, theta, lam=lam)
 
             if self.stopping(grad):
                 break
-            t += 1
-            m = beta1 * m + (1.0 - beta1) * grad
-            v = beta2 * v + (1.0 - beta2) * (grad * grad)
-
-            if bias_correction:
-                m_hat = m / (1.0 - beta1 ** t)
-                v_hat = v / (1.0 - beta2 ** t)
-            else:
-                m_hat = m
-                v_hat = v
-            z = theta - eta * m_hat / (np.sqrt(v_hat) + eps)
-
-            if self._l1:
-                alpha = (eta / (np.sqrt(v_hat) + eps)) * lam
-                theta = soft_threshold(z, alpha)
             
             else:
-                theta = z
+                first_moment = beta1*first_moment + (1-beta1)*grad
+                second_moment = beta2*second_moment+(1-beta2)*grad*grad
+                first_term = first_moment/(1.0-beta1**iter)
+                second_term = second_moment/(1.0-beta2**iter)
+                update = eta*first_term/(np.sqrt(second_term)+eps)
+                theta -= update
     
         return theta
 
@@ -248,7 +245,11 @@ class GradientDescent:
 
         theta = np.zeros(n_features)      
         data_indices = np.arange(n_samples)    
-        steps = 0                       
+        steps = 0                   
+
+        x0 = 1
+        x1 = 5
+        eta = x0/x1    
 
         while steps < self._iters:
             if shuffle:
@@ -258,6 +259,7 @@ class GradientDescent:
                 if steps >= self._iters:
                     break
 
+                    
                 batch_idx = data_indices[start_idx:start_idx + minibatch_size]
                 X_batch = self._X[batch_idx]
                 y_batch = self._y[batch_idx]
@@ -275,6 +277,7 @@ class GradientDescent:
                     theta = z
 
                 steps += 1
+                #eta = self.scale_eta(steps, x0,x1). Using dynamic step size. 
 
         return theta
 
@@ -304,14 +307,13 @@ class GradientDescent:
             if self.stopping(grad):
                 break
             s = rho * s + (1.0 - rho) * (grad * grad)
-            z = theta - (eta / (np.sqrt(s) + eps)) * grad
+            z =  (eta / (np.sqrt(s) + eps)) * grad
+            theta -= z
             
             if self._l1:
                 alpha = (eta / (np.sqrt(s) + eps)) * lam
-                theta = soft_threshold(z, alpha)
+                theta -= soft_threshold(z, alpha)
 
-            else:
-                theta = z
 
         return theta
 
@@ -330,8 +332,8 @@ class GradientDescent:
         bool
             True if the gradient norm is below tolerance, else False.
         """
-        tol = self._eps if e is None else float(e)
-        return float(np.linalg.norm(grad)) < tol
+       
+        return float(np.linalg.norm(grad)) < self._eps
     
 
     def scale_eta(self, x, x0, x1):
@@ -358,7 +360,7 @@ class Resampling:
     Implements resampling methods such as bootstrap and k-fold cross-validation.
     """
 
-    def __init__(self, X, y):
+    def __init__(self, X=None, y=None):
         """
         Initialize the resampling class with data.
 
@@ -371,10 +373,10 @@ class Resampling:
         """
         self.X = np.asarray(X)
         self.y = np.asarray(y)
-        self.n_samples = self.X.shape[0]
+        #self.n_samples = self.X.shape[0]
 
 
-    def bootstrap(self, n_bootstraps=100):
+    def bootstrap(self, bootstraps=100, dp=1000, hm=False):
         """
         Generate bootstrap resamples of the dataset.
 
@@ -391,29 +393,81 @@ class Resampling:
             - X_resampled, y_resampled are the bootstrap samples
             - X_oob, y_oob are the corresponding out-of-bag samples
         """
-        resamples = []
+        np.random.seed(44)
+        x = np.linspace(-1, 1, dp)
+        y = runge(x) + np.random.normal(0,0.1,dp)
 
-        for _ in range(n_bootstraps):
-            indices = np.random.randint(0, self.n_samples, self.n_samples)
+        biases = []
+        variances = []
+        mses = []
+        X_train, X_test, y_train, y_test = train_test_split(x, y, random_state=44)
+        predictions = np.zeros((bootstraps, len(y_test)))
+        flatPreds = []
+        targetsFlat = []
+        targets = np.zeros((bootstraps, len(y_test)))
+        datapoints = [20,50,100,200,500,1000]
 
-            oob_indices = []
-            for i in range(self.n_samples):
-                if i not in indices:
-                    oob_indices.append(i)
+        if hm:
+            for d, dp in enumerate(datapoints):
+                x = np.linspace(-1, 1, dp)
+                y = runge(x) + np.random.normal(0,0.2,dp)
+                predictions = np.zeros((bootstraps, len(y_test)))
+                targets = np.zeros((bootstraps, len(y_test)))
+                X = polynomial_features(X_train, 10)
+                Y = polynomial_features(X_test, 10)
+                scaled_train, y_scaled = scale(X, y)
+                scaled_test = (scale(Y, y))[0]
+                y_mean = np.mean(y)
+                y_centered = y_train - y_mean
+                #model = make_pipeline(PolynomialFeatures(degree=p), LinearRegression(fit_intercept=False))
+                for b in range(bootstraps):
+                    x_sample, y_sample = resample(scaled_train, y_centered)
+                    #this is where you fit your model on the sampled data
+                    betaOLS = ols(x_sample, y_sample)
+                    bootstrap_pred = scaled_test@betaOLS + y_mean
 
-            X_resampled = self.X[indices]
-            y_resampled = self.y[indices]
-            X_oob = self.X[oob_indices]
-            y_oob = self.y[oob_indices]
+                    predictions[b, :] = bootstrap_pred
+                    targets[b, :] = y_test
 
-            resamples.append((X_resampled, y_resampled, X_oob, y_oob))
+                from sklearn.metrics import mean_squared_error
+                biases.append(bias(targets, predictions))
+                variances.append(var(predictions))
+                mses.append(mse(targets, predictions))
 
-        return resamples
+            return biases, variances, mses
+                
+
+        else:
+            for p in range(2, 16):
+                predictions = np.zeros((bootstraps, len(y_test)))
+                targets = np.zeros((bootstraps, len(y_test)))
+                X = polynomial_features(X_train, p)
+                Y = polynomial_features(X_test, p)
+                scaled_train, y_scaled = scale(X, y)
+                scaled_test = (scale(Y, y))[0]
+                y_mean = np.mean(y)
+                y_centered = y_train - y_mean
+                for b in range(bootstraps):
+                    x_sample, y_sample = resample(scaled_train, y_centered)
+                    betaOLS = ols(x_sample, y_sample)
+                    bootstrap_pred = scaled_test@betaOLS + y_mean
+
+                    predictions[b, :] = bootstrap_pred
+                    targets[b, :] = y_test
+
+                biases.append(bias(targets, predictions))
+                variances.append(var(predictions))
+                mses.append(mse(targets, predictions))
+
+            return biases, variances, mses
+
+
     
 
     def kCross(self, k=5, shuffle=True):
         """
-        Perform k-fold cross-validation splitting.
+        Performs k-fold cross-validation splitting. Redundant (?)
+        Use for Benchmark sklearn.
 
         Parameters
         ----------
@@ -437,7 +491,7 @@ class Resampling:
 
         for i in range(k):
             start = i * fold_size
-            if i == k - 1:  # last fold takes the remainder
+            if i == k - 1: 
                 end = self.n_samples
             else:
                 end = (i + 1) * fold_size

@@ -1,6 +1,4 @@
-# from imports import *
-#from plots import *
-# REMOVE: from imports import *
+
 import numpy as np
 from numpy.linalg import pinv
 
@@ -108,8 +106,8 @@ def soft_threshold(z, alpha):
     ----------
     z : ndarray
         Predicted betas.
-    lam : float, default=0.1
-        Regularization strength (lambda).
+    alpha : float
+        Threshold value.
 
     Returns
     -------
@@ -204,7 +202,7 @@ def r_squared(t, p):
             ss_res += (t[i] - p[i])**2
             ss_tot += (t[i] - mean_t)**2
 
-        return 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
+        return 1 - ss_res / ss_tot if ss_tot > 0 else 1.0
 
     elif t.ndim == 2:
         n, m = t.shape
@@ -275,6 +273,8 @@ def bias(y_true, y_pred):
     """
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
+    n_models, n_samples = y_true.shape
+    bias_sum = 0.0
 
     if y_pred.ndim == 1:
         n = len(y_true)
@@ -285,22 +285,15 @@ def bias(y_true, y_pred):
 
         return bias_sum / n
 
-    elif y_pred.ndim == 2:
-        n_models, n_samples = y_pred.shape
-        bias_sum = 0.0
-
-        for j in range(n_samples):
-            mean_pred = 0.0
-
-            for i in range(n_models):
-                mean_pred += y_pred[i, j]
-            mean_pred /= n_models
-            bias_sum += (y_true[j] - mean_pred)**2
-
-        return bias_sum / n_samples
-
     else:
-        raise ValueError("y_pred must be 1D or 2D array")
+        assert(y_true.shape == y_pred.shape)
+        bias = 0
+        for col in range(y_true.shape[1]): # Go through every column to compute the average predicted values accross all bootstraps
+            avg_ypred = (1/y_pred.shape[0])*sum(y_pred[:, col])
+            for row in range(y_true.shape[0]): # For each bootstrap, we compare the average predicted value in every column to every true value
+                bias += (y_true[row][col] - avg_ypred)**2
+        bias = bias/(y_true.shape[1]*y_true.shape[0]) # Divide by all data points, i
+        return bias
 
 
 def var(P):
@@ -323,7 +316,7 @@ def var(P):
     """
     P = np.asarray(P)
 
-    if P.ndim == 1:
+    if P.ndim==1:
         mean_val = np.mean(P)
         var = 0.0
 
@@ -333,24 +326,31 @@ def var(P):
 
         return var
 
-    elif P.ndim == 2:
+    else:
         var = 0.0
-
-        rows, cols = P.shape
-
-        for n in range(cols): 
-            avg_val = (1 / rows) * sum(P[:, n])
-
-            for m in range(rows): 
-                var += (P[m, n] - avg_val) ** 2
-        var /= (rows * cols)
-
+        for n in range(P.shape[1]): # Go through all bootstraps
+            avg_var = (1/P.shape[0])*sum(P[:,n])
+            for m in range(P.shape[0]):
+                var += (P[m][n] - avg_var)**2
+        var = var/(P.shape[1]*P.shape[0])    
         return var
 
-    else:
-        raise ValueError("Input must be 1D or 2D array")
 
 def scale(X, y):
+    """Homemade scaling function.
+    
+    Parameters
+    ----------
+    X: array-like
+        Polynomial feature matrix (design matrix)
+    
+    y: array
+        List of y_values (generic)
+
+    Returns 
+    -------
+    Scaled X and y based on z-score normalization
+    """
     X_mean = X.mean(axis=0)
     X_std = X.std(axis=0)
     X_std[X_std == 0] = 1

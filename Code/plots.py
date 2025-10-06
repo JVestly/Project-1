@@ -5,7 +5,10 @@ import pandas as pnd
 from functions import polynomial_features, scale, ols, ridge, mse, r_squared, runge
 from sklearn.model_selection import train_test_split
 from classes import GradientDescent, Resampling
-from scipy import sparse
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import SGDRegressor
+from sklearn.preprocessing import StandardScaler
+
 
 def plotPD(deg, t, n=None, type_=" "):
     """
@@ -48,7 +51,7 @@ def plotPD(deg, t, n=None, type_=" "):
             np.random.seed(1)
             x = np.linspace(-1, 1, datapoints)
             y = runge(x) + np.random.normal(0, 0.1, datapoints)
-            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=1)
         
             for j in range(2, deg+2):
                 X = polynomial_features(x_train, j)
@@ -75,9 +78,9 @@ def plotPD(deg, t, n=None, type_=" "):
 
         for dp, no in enumerate(n):
             ax.plot(orders, plot_matrix[dp, : ], label=f"Datapoints: {n[dp]}")
-        ax.set_xlabel("Polynomial degree", fontsize=14)
+        ax.set_xlabel("Polynomial degree", fontsize=13)
         if type_ == "mse":
-            ax.set_ylabel("MSE", fontsize=14)
+            ax.set_ylabel("MSE", fontsize=15)
             ax.legend()
             fig.tight_layout
             if t=='a':
@@ -87,7 +90,7 @@ def plotPD(deg, t, n=None, type_=" "):
                 ax.set_title("MSE Ridge (lambda 0.01)")
                 fig.savefig("ridge_mse.pdf")
         elif type_ == "r2":
-            ax.set_ylabel("R2", fontsize=14)
+            ax.set_ylabel("R2", fontsize=15)
             ax.legend()
             fig.tight_layout
             if t == "a":
@@ -191,13 +194,11 @@ def plot_betas(deg, t):
             beta = ridge(scaled_train, y_train, 0.01)
         else:
             g = GradientDescent(scaled_train, 5000, y_train, l1=True)
-            beta = g.gradStoc(lam=0.01)
+            beta = g.gradMomentum(lam=0.01)
         sparse_beta = np.pad(beta, (0, deg - len(beta)), mode='constant')
         beta_matrix[:, j-1] = sparse_beta
 
 
-
-        
     
     orders = np.arange(2, deg+2)
     fig, ax = plt.subplots(figsize=(6,4))
@@ -205,7 +206,7 @@ def plot_betas(deg, t):
         ax.plot(orders, beta_matrix[d, :], label=f"Beta {d+1}")
 
     ax.set_ylabel("Beta", fontsize=14)
-    ax.set_xlabel("Polynomial degrees", fontsize=14)
+    ax.set_xlabel("Polynomial degrees", fontsize=13)
     ax.legend(fontsize=8, loc="lower left", ncol=2)
     fig.tight_layout
     if t == "a":
@@ -328,28 +329,28 @@ def convergence(loop, stoc=False, l1=False):
     else:
         for i, iters in enumerate(loop):
             
-            grad = GradientDescent(scaled_train, iters, y_centered, l1=True)
+            grad = GradientDescent(scaled_train, iters, y_centered, l1)
             # betaRidge = grad.gradOrd(iters=iters, eta=0.15, l=0.0001)
             # predRidge = scaled_test@betaRidge + y_mean
             # mseRidge = mse(y_test, predRidge)
             # plot_matrix[i][0] = mseRidge
             
-            betaMom = grad.gradMomentum(eta=0.1, lam=0.01)
+            betaMom = grad.gradMomentum(eta=0.2)
             predMom = scaled_test@betaMom + y_mean
             mseMom = mse(y_test, predMom)
             plot_matrix[i][0] = mseMom
 
-            betaStoc = grad.gradStoc(eta=0.2, batch_size=100, lam=0.01)
+            betaStoc = grad.gradStoc(eta=0.2, batch_size=100)
             predS = scaled_test@betaStoc + y_mean
             mseS = mse(y_test, predS)
             plot_matrix[i][1] = mseS
             
-            betaAda = grad.gradAda(eta=0.1, lam=0.01)
+            betaAda = grad.gradAda(eta=0.05)
             predAda = scaled_test@betaAda + y_mean
             mseAda = mse(y_test, predAda)
             plot_matrix[i][2] = mseAda
             
-            betaRMS = grad.gradRMS(eta=0.1, lam=0.01)
+            betaRMS = grad.gradRMS(eta=0.001)
             predRMS = scaled_test@betaRMS + y_mean
             mseRMS = mse(y_test, predRMS)
             plot_matrix[i][3] = mseRMS
@@ -357,14 +358,14 @@ def convergence(loop, stoc=False, l1=False):
             betaAdam = grad.gradADAM(eta=0.1)
             predAdam = scaled_test@betaAdam + y_mean
             mseAdam = mse(y_test, predAdam)
-            plot_matrix[i][5] = mseAdam
+            plot_matrix[i][4] = mseAdam
 
             betaOLS = ols(scaled_train, y_centered)
             predOLS = scaled_test@betaOLS + y_mean
             mseOLS = mse(y_test, predOLS)
             plot_matrix[i][5] = mseOLS
 
-            betaGradOLS = grad.gradOrd(iters, eta=0.15, l=0.01)
+            betaGradOLS = grad.gradOrd(iters, eta=0.15)
             predGradOLS = scaled_test@betaGradOLS + y_mean
             mseGradOLS = mse(y_test, predGradOLS)
             plot_matrix[i][6] = mseGradOLS
@@ -378,7 +379,7 @@ def convergence(loop, stoc=False, l1=False):
         ax.set_title("Convergence Gradient Descent LASSO", fontsize=16)
         ax.legend()
         fig.tight_layout
-        fig.savefig("convergence_lasso.pdf")
+        fig.savefig("convergence_GD.pdf")
         plt.show()
 
 
@@ -397,7 +398,7 @@ def poly_fit():
     X = polynomial_features(x_train, n)
     Y = polynomial_features(x_test, n)
 
-    from sklearn.preprocessing import StandardScaler
+    
     scaler = StandardScaler(with_mean=True, with_std=True)
     Xtr_s = scaler.fit_transform(X)
     Xte_s = scaler.transform(Y)   
@@ -453,6 +454,45 @@ def test_ridge():
 
     return np.allclose(y_pred, predRidge)
 
+def test_GD():
+    model = SGDRegressor(
+    loss="squared_error",
+    learning_rate="constant",
+    eta0=0.01,
+    max_iter=1000,
+    tol=1e-6,
+    penalty=None,
+    shuffle=False,
+    random_state=42
+    )
+    x = np.linspace(-1, 1, 1000)
+    y = runge(x) + np.random.normal(0, 0.1, 1000)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+    n = 6
+    X = polynomial_features(x_train, n)
+    Y = polynomial_features(x_test, n)
+
+    scaler = StandardScaler(with_mean=True, with_std=True)
+    Xtr_s = scaler.fit_transform(X)
+    Xte_s = scaler.transform(Y) 
+    y_mean = np.mean(y_train)
+    y_centered = y_train - y_mean
+    n_epochs = 1000
+    for epoch in range(n_epochs):
+        model.partial_fit(Xtr_s, y_centered)
+
+    print("Weights:", model.coef_)
+    print("Intercept:", model.intercept_)
+
+    gradStochastic = GradientDescent(Xtr_s, 10000, y_centered)
+    betaStoc = gradStochastic.gradOrd(eta=0.01)
+    pred = Xte_s@betaStoc
+
+    print(betaStoc
+          )
+    print
+    (pred)
+
 
 def mse_complexity(degs):
     """Function for test and train."""
@@ -506,21 +546,21 @@ def test_resampling():
     ax.plot(degrees, variances, marker='o', label='Variance')
     ax.plot(degrees, mses, label='MSE')
 
-    ax.set_xlabel('Polynomial degree', fontsize=13)
-    ax.set_ylabel('Average over test points', fontsize=13)
-    ax.set_title('Bias–Variance vs. polynomial degree (10000 boots, 100 dps)', fontsize=14)
+    ax.set_xlabel('Polynomial degree', fontsize=15)
+    ax.set_ylabel('Average over test points', fontsize=15)
+    ax.set_title('Bias–Variance vs. polynomial degree (1000 boots, 100 dps)', fontsize=15)
 
     ax.legend(fontsize=12)
     ax.tick_params(axis='both', labelsize=12) 
 
     fig.tight_layout()
-    fig.savefig("g_bvto_test.pdf")
+    fig.savefig("g_bvto.pdf")
     plt.show()
 
 
 def testK_fold():
     """Function for testing and comparing k-fold."""
-
+    np.random.seed(67)
     x = np.linspace(-1, 1, 100)
     y = runge(x) + np.random.normal(0, 0.1, 100)
     from sklearn.preprocessing import StandardScaler
@@ -529,7 +569,7 @@ def testK_fold():
     k = Resampling(x, y)
 
     degrees = np.arange(2,16)
-    k_splits = 100
+    k_splits = 10
 
  
     mse_ols   = np.zeros((len(degrees), k_splits))
@@ -574,11 +614,11 @@ def testK_fold():
     ax.plot(degrees, mean_ridge, marker='s', label=f"Ridge (lam={0.01})")
     ax.plot(degrees, mean_lasso, marker='^', label=f"Lasso (lam={0.0001})")
 
-    ax.set_xlabel("Polynomial degree", fontsize=13)
-    ax.set_ylabel("Mean Squared Error (MSE)", fontsize=13)
-    ax.set_title(f"{k_splits}-Fold CV: MSE vs Polynomial Degree")
+    ax.set_xlabel("Polynomial degree", fontsize=16)
+    ax.set_ylabel("Mean Squared Error (MSE)", fontsize=16)
+    ax.set_title(f"{k_splits}-Fold CV: MSE vs Polynomial Degree", fontsize=17)
     ax.legend()
 
     fig.tight_layout()
-    fig.savefig("kfold100_lowl1_test.pdf")
+    fig.savefig("kfold_lowerl1.pdf")
     plt.show()

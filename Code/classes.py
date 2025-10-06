@@ -17,26 +17,6 @@ class GradientDescent:
         self._l1 = l1
 
 
-    def Grad(self, X, y, iterations, eta):
-        """
-        Gradient decent method that does both OLS and Ridge based on the choice of lamb and mass in the constructor.
-
-        See the documentation for the whole class for a usage guide. 
-        """
-        theta = np.zeros(X.shape[1])
-        change = np.zeros_like(theta)
-
-        for _ in range(iterations):
-            penalty_R = 0 * theta
-            momentum = 0 * change
-            grad = 2 * ((1 / y.shape[0]) * X.T @ (X @ theta - y) + penalty_R)
-            change = (-1 * eta * grad) + momentum
-            theta += change
-            if (np.linalg.norm(grad) < self._eps):
-                break
-
-        return theta
-
     
     def gradOrd(self, iters=None, eta=0.1, l=0):
         """
@@ -57,7 +37,6 @@ class GradientDescent:
             The optimized parameter vector.
         """
         theta = np.zeros(self._X.shape[1])
-        thetas = []
 
 
         for t in range(self._iters):
@@ -69,7 +48,6 @@ class GradientDescent:
                 alpha = eta*l
                 z = theta - eta*grad
                 theta = soft_threshold(z, alpha)
-                thetas.append(theta)
                 
             theta = z
             
@@ -204,6 +182,7 @@ class GradientDescent:
         t = 0
         first_moment = 0.0
         second_moment = 0.0
+
         for iter in range(1, self._iters+1):
             grad = gradient(self._X, self._y, theta, lam=lam)
 
@@ -216,7 +195,7 @@ class GradientDescent:
                 first_term = first_moment/(1.0-beta1**iter)
                 second_term = second_moment/(1.0-beta2**iter)
                 update = eta*first_term/(np.sqrt(second_term)+eps)
-                theta -= update
+                theta = update
     
         return theta
 
@@ -247,8 +226,8 @@ class GradientDescent:
         data_indices = np.arange(n_samples)    
         steps = 0                   
 
-        x0 = 1
-        x1 = 5
+        x0 = 5
+        x1 = 10
         eta = x0/x1    
 
         while steps < self._iters:
@@ -277,7 +256,7 @@ class GradientDescent:
                     theta = z
 
                 steps += 1
-                #eta = self.scale_eta(steps, x0,x1). Using dynamic step size. 
+                #eta = self.scale_eta(steps, x0,x1)#. Using dynamic step size. 
 
         return theta
 
@@ -376,7 +355,7 @@ class Resampling:
         #self.n_samples = self.X.shape[0]
 
 
-    def bootstrap(self, bootstraps=100, dp=1000, hm=False):
+    def bootstrap(self, bootstraps=1000, dp=100, hm=False):
         """
         Generate bootstrap resamples of the dataset.
 
@@ -393,14 +372,14 @@ class Resampling:
             - X_resampled, y_resampled are the bootstrap samples
             - X_oob, y_oob are the corresponding out-of-bag samples
         """
-        np.random.seed(44)
+        np.random.seed(16)
         x = np.linspace(-1, 1, dp)
         y = runge(x) + np.random.normal(0,0.1,dp)
 
         biases = []
         variances = []
         mses = []
-        X_train, X_test, y_train, y_test = train_test_split(x, y, random_state=44)
+        X_train, X_test, y_train, y_test = train_test_split(x, y, random_state=16)
         predictions = np.zeros((bootstraps, len(y_test)))
         flatPreds = []
         targetsFlat = []

@@ -17,3 +17,4 @@ In order for the code to work, there is a list of required installations in the 
 requirements.txt - a list of mandatory installations to run the code.
 
 Run main.py to perform all testing.
+We noticed that our last tests for convergence lead to overflow, but it worked before that.

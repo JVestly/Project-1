@@ -17,4 +17,4 @@ In order for the code to work, there is a list of required installations in the 
 requirements.txt - a list of mandatory installations to run the code.
 
 Run main.py to perform all testing.
-We noticed that our last tests for convergence lead to overflow, but it worked before that.
+We noticed that our last tests for convergence of the various gradient descent methods lead started lead to overflow, although the code remains unchanged. This could be due to an issue with our console. We are working on identifying the issue. Nevertheless, the functioning plot can be found in the report. 
